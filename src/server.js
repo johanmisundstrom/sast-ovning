@@ -1,7 +1,7 @@
 // MEDVETET SÅRBAR app för SAST-övningen. Kör den aldrig i produktion.
 const express = require("express");
 const sqlite3 = require("sqlite3");
-const { exec } = require("child_process");
+const { execFile } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
@@ -30,7 +30,13 @@ app.get("/search", (req, res) => {
 
 // Pinga en server
 app.get("/ping", (req, res) => {
-  exec("ping -c 1 " + req.query.host, (err, stdout) => {
+  const host = String(req.query.host || "");
+  // Tillåt endast vanliga tecken för värdnamn/IP (ingen shell-metatecken)
+  if (!/^[a-zA-Z0-9.\-:]+$/.test(host)) {
+    return res.status(400).send("Ogiltig host");
+  }
+
+  execFile("ping", ["-c", "1", host], (err, stdout) => {
     res.send("<pre>" + (stdout || "ingen respons") + "</pre>");
   });
 });
